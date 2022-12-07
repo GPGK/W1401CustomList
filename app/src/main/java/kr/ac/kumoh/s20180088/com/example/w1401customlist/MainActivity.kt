@@ -2,7 +2,6 @@ package kr.ac.kumoh.s20180088.com.example.w1401customlist
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -10,6 +9,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.volley.toolbox.NetworkImageView
 import kr.ac.kumoh.s20180088.com.example.w1401customlist.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -48,6 +48,11 @@ class MainActivity : AppCompatActivity() {
         inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView) {
             val txTitle: TextView = itemView.findViewById(R.id.text1)
             val txSinger: TextView = itemView.findViewById(R.id.text2)  // text1 text2 : item_song.xml에 있는 것
+            val niImage: NetworkImageView = itemView.findViewById(R.id.image)
+
+            init {
+                niImage.setDefaultImageResId(android.R.drawable.ic_menu_report_image)
+            }
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -58,9 +63,10 @@ class MainActivity : AppCompatActivity() {
             return ViewHolder(view)
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            holder.txTitle.text = model.list.value?.get(position)?.title ?: null
-            holder.txSinger.text = model.list.value?.get(position)?.singer ?: null
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {  // 화면의 값을 지정해줌
+            holder.txTitle.text = model.list.value?.get(position)?.title
+            holder.txSinger.text = model.list.value?.get(position)?.singer
+            holder.niImage.setImageUrl(model.getImageUrl(position), model.imageLoader)
         }
 
         override fun getItemCount() = model.list.value?.size ?: 0

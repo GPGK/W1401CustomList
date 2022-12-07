@@ -1,22 +1,27 @@
 package kr.ac.kumoh.s20180088.com.example.w1401customlist
 
 import android.app.Application
+import android.graphics.Bitmap
 import android.widget.Toast
+import androidx.collection.LruCache
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.android.volley.Request
 import com.android.volley.RequestQueue
+import com.android.volley.toolbox.ImageLoader
 import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.Volley
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.URLEncoder
 
 class SongViewModel(application: Application) : AndroidViewModel(application) {
-    data class Song (var id: Int, var title: String, var singer: String)
+    data class Song (var id: Int, var title: String, var singer: String, var image: String)
 
     companion object {
         const val QUEUE_TAG = "SongVolleyRequest"
+        const val SERVER_URL = "https://expresssongdb-rwhxi.run.goorm.io"
     }
 
     private val songs = ArrayList<Song>()
@@ -25,20 +30,34 @@ class SongViewModel(application: Application) : AndroidViewModel(application) {
         get() = _list
 
     private var queue: RequestQueue
+    val imageLoader: ImageLoader
 
     init {
         _list.value = songs
         queue = Volley.newRequestQueue(getApplication())
+
+        imageLoader = ImageLoader(queue,
+            object : ImageLoader.ImageCache {
+                private val cache = LruCache<String, Bitmap>(100)   // 한번에 이미지 로드할 개수
+                override fun getBitmap(url: String): Bitmap? {
+                    return cache.get(url)
+                }
+                override fun putBitmap(url: String, bitmap: Bitmap) {
+                    cache.put(url, bitmap)
+                }
+            })
     }
+
+    fun getImageUrl(i: Int): String = "$SERVER_URL/image/" + URLEncoder.encode(songs[i].image, "utf-8")
+    //fun getImageUrl(i: Int): String = "https://picsum.photos/200/300?random=${songs[i].id}"
+    // 이미지를 랜덤하게 넣어준다.
 
     fun requestSong() {
         // NOTE: 서버 주소는 본인의 서버 IP 사용할 것
-        val url = "https://expresssongdb-rwhxi.run.goorm.io/songs"
-
         // Array를 반환할 경우에는 JsonObjectRequest 대신 JsonArrayRequest 사용
         val request = JsonArrayRequest(
             Request.Method.GET,
-            url,
+            SERVER_URL + "/songs",
             null,
             {
                 //Toast.makeText(getApplication(), it.toString(), Toast.LENGTH_LONG).show()
@@ -61,8 +80,9 @@ class SongViewModel(application: Application) : AndroidViewModel(application) {
             val id = item.getInt("id")
             val title = item.getString("title")
             val singer = item.getString("singer")
+            val image = item.getString("image")
 
-            songs.add(Song(id, title, singer))
+            songs.add(Song(id, title, singer, image))
         }
     }
 
